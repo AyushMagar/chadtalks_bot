@@ -1,0 +1,40 @@
+{
+  "users": {
+    "822705459932823572": {
+      "last_valid_log": "2025-11-08T11:59:34.900090+05:30",
+      "weekly_points": 0,
+      "total_points": 0,
+      "daily_points": {
+        "2025-11-07": -11,
+        "2025-11-08": 11
+      },
+      "sick_days": {},
+      "warned_at": null,
+      "joined_at": null
+    },
+    "843100870953402406": {
+      "last_valid_log": null,
+      "weekly_points": -11,
+      "total_points": -11,
+      "daily_points": {
+        "2025-11-07": -11
+      },
+      "sick_days": {},
+      "warned_at": null,
+      "joined_at": null
+    },
+    "1091006425788059728": {
+      "last_valid_log": null,
+      "weekly_points": -11,
+      "total_points": -11,
+      "daily_points": {
+        "2025-11-07": -11
+      },
+      "sick_days": {},
+      "warned_at": null,
+      "joined_at": null
+    }
+  },
+  "leaderboard_message_id": null,
+  "_last_daily_run": "2025-11-07"
+}
