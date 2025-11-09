@@ -6,8 +6,6 @@ import asyncio
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
-
-
 import discord
 from discord.ext import commands, tasks
 from dotenv import load_dotenv
@@ -15,8 +13,8 @@ load_dotenv()
 
 # -------- CONFIGURATION --------
 DATA_FILE = "data.json"
-GUILD_DAILYLOG_CHANNEL = "dailylogs"      # channel for daily logs
-LEADERBOARD_CHANNEL = "leaderboard"       # channel for leaderboard
+GUILD_DAILYLOG_CHANNEL = "dailylogs"
+LEADERBOARD_CHANNEL = "leaderboard"
 BOT_NAME = "ChadTalks Accountability Bot"
 
 # Thresholds (>=)
@@ -39,8 +37,8 @@ KICK_AFTER = timedelta(hours=48)
 
 # Timezone + timings
 TZ = ZoneInfo("Asia/Kolkata")
-DAILY_LEADERBOARD_HOUR = 21    # 9 PM IST
-WEEKLY_RESET_HOUR = 21         # Sunday 9 PM IST
+DAILY_LEADERBOARD_HOUR = 0    # 12:00 AM IST
+DOUBLE_LOG_INTERVAL = timedelta(hours=12)
 
 # -------- BOT SETUP --------
 intents = discord.Intents.default()
@@ -82,11 +80,6 @@ def now_ist():
 def date_str(dt=None):
     dt = dt or now_ist()
     return dt.date().isoformat()
-
-def week_key(dt=None):
-    dt = dt or now_ist()
-    y, w, _ = dt.isocalendar()
-    return f"{y}-W{w}"
 
 # -------- PARSING --------
 def parse_number_with_k(text):
@@ -192,9 +185,19 @@ async def on_message(message):
     if message.author.bot:
         return
     if message.channel.name == GUILD_DAILYLOG_CHANNEL:
+        rec = ensure_user_record(message.author.id)
+        last_log_iso = rec.get("last_valid_log")
+
+        if last_log_iso:
+            last_log_time = datetime.fromisoformat(last_log_iso)
+            if now_ist() - last_log_time < DOUBLE_LOG_INTERVAL:
+                await message.channel.send(
+                    f"⚠️ {message.author.mention} — You’ve already completed your daily log. This entry will **not be accepted.** 💪"
+                )
+                return
+
         metrics = extract_metrics_from_text(message.content)
         pts, details = score_metrics(metrics)
-        rec = ensure_user_record(message.author.id)
 
         rec["last_valid_log"] = now_ist().isoformat()
         rec["weekly_points"] += pts
@@ -214,10 +217,10 @@ async def on_message(message):
 @bot.command(name="sick")
 async def cmd_sick(ctx, *, reason: str = ""):
     rec = ensure_user_record(ctx.author.id)
-    wk = week_key()
+    wk = date_str()[:7]  # month-based tracking instead of weekly reset
     used = rec.get("sick_days", {}).get(wk, 0)
     if used >= SICK_DAYS_WEEKLY_LIMIT:
-        await ctx.send(f"❌ {ctx.author.mention} — you already used {SICK_DAYS_WEEKLY_LIMIT} sick days this week.")
+        await ctx.send(f"❌ {ctx.author.mention} — you already used {SICK_DAYS_WEEKLY_LIMIT} sick days recently.")
         return
     rec["sick_days"][wk] = used + 1
     rec["daily_points"][date_str()] = "SICK"
